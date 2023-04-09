@@ -1,0 +1,80 @@
+{# 
+ $Project: Ka Extensions $
+ $Author: karapuz team <support@ka-station.com> $
+ $Version: 4.1.0.26 $ ($Revision: 245 $) 
+#}
+
+<div class="modal-dialog"  style="width: 600px; padding-top: 200px;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h4 class="modal-title">{{ text_extension_registration }}</h4>
+    </div>
+
+    	<div class="modal-body">
+		    <div id="msgError" class="alert alert-danger" style="display: none"><i class="fa fa-exclamation-circle"></i>
+		    	<button type="button" class="close" data-dismiss="alert">&times;</button>
+	    		<span>&nbsp;</span>
+		    </div>
+	    
+  		  	<div id="msgSuccess" class="alert alert-success" style="display: none"><i class="fa fa-check-circle"></i>
+  	  			<button type="button" class="close" data-dismiss="alert">&times;</button>
+				<span>&nbsp;</span>
+			</div>    	
+    
+			<span>{{ text_reg_instructions }}</span>
+			
+			<input type="hidden" name="extension" value="{{ extension }}" />
+			<table width="100%">
+				<tr>
+					<td width="200px" style="font-size: 16px">{{ text_license_key }}</td>
+					<td>
+						<input type="text" name="license_key" value="" class="form-control" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"/>
+					</td>
+				</tr>
+			</table>
+    </div>
+    <div class="modal-footer">
+			<button id="btnRegister" type="button" title="{{ text_register }}" class="btn btn-primary">{{ text_register }}</button>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript"><!--
+
+$('#btnRegister').on('click', function(e) {
+
+		$.ajax({
+			url: 'index.php?route=extension/extension/ka_extensions/activateKey&user_token=' + getURLVar('user_token'),
+			type: 'post',
+			dataType: 'json',
+			data: $('input[name^=\'license_key\'], input[name^=\'extension\']'),
+			beforeSend: function() {
+				$('#msgVisible').remove();
+				$('#btnRegister').prop('disabled', true);
+			},	
+			complete: function() {
+				$('#btnRegister').prop('disabled', false);
+			},		
+			success: function(json) {
+				if (json['redirect']) {
+					location = json['redirect'];
+				}
+			
+				if (json['error']) {
+					$('#msgError span').html(json['error']);
+					$('#msgError').clone().attr('id', 'msgVisible').insertAfter('#msgError').show();
+				}
+				
+				if (json['success']) {
+					$('#msgSuccess span').html(json['success']);
+					$('#msgSuccess').clone().attr('id', 'msgVisible').insertAfter('#msgSuccess').show();
+				}
+			},
+			error: function(xhr, ajaxOptions, thrownError) {
+				alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+			}
+		});
+		
+});
+//--></script>

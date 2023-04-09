@@ -1,0 +1,500 @@
+<?php
+//==============================================================================
+// Stripe Payment Gateway v303.16
+// 
+// Author: Clear Thinking, LLC
+// E-mail: johnathan@getclearthinking.com
+// Website: http://www.getclearthinking.com
+// 
+// All code within this file is copyright Clear Thinking, LLC.
+// You may not copy or reuse code within this file without written permission.
+//==============================================================================
+?>
+
+<style type="text/css">
+ 	/* Journal fixes */
+	#content .payment-stripe, #payment-request-button {
+		display: block !important;
+	}
+	/* end */
+	#payment-method-tabs {
+		margin-bottom: -1px;
+		text-align: center;
+	}
+	#payment-method-tabs span[data-tab] {
+		background: #FFF;
+		border: 1px solid #DDD;
+		border-bottom: 1px solid #BBB;
+		border-radius: 5px 5px 0 0;
+		cursor: pointer;
+		display: inline-block;
+		font-size: 14px;
+		padding: 5px 15px;
+	}
+	#payment-method-tabs img {
+		vertical-align: middle;
+	}
+	#payment-method-tabs .active, #payment {
+		border: 1px solid #BBB !important;
+	}
+	#payment-method-tabs .active {
+		border-bottom: 1px solid rgba(255, 255, 255, 0) !important;
+		font-weight: bold;
+	}
+	#payment {
+		background: #FFF;
+		display: block;
+		margin-bottom: 15px;
+		padding: 25px;
+		text-align: center;
+	}
+	#card-select, #payment label {
+		display: inline-block;
+	}
+	#card-select {
+		width: 200px;
+		margin: 0 10px 10px 0;
+	}
+	#new-card {
+		max-width: 100%;
+	}
+	#payment-request-button {
+		margin: auto;
+	}
+	#card-element, #card-number, #card-expiry, #card-cvc {
+		background: #FFF;
+		border: 1px solid #DDD;
+		border-radius: 10px;
+		display: inline-block;
+		margin-right: 10px;
+		padding: 10px 15px;
+		vertical-align: middle;
+		width: 400px;
+		max-width: 100%;
+	}
+	#card-number-text, #card-expiry-text, #card-cvc-text {
+		display: inline-block;
+		width: 90px;
+	}
+	<?php if ($settings['card_input_format'] == 'individual') { ?>
+		#new-card {
+			text-align: left;
+			margin-left: 38%;
+		}
+		#card-number, #card-expiry, #card-cvc {
+			border-radius: 5px;
+			margin: 3px 10px;
+			padding: 6px 10px;
+		}
+		#card-number {
+			width: 170px !important;
+		}
+		#card-expiry {
+			width: 84px !important;
+		}
+		#card-cvc {
+			width: 56px !important;
+		}
+		#card-type {
+			font-size: 32px;
+			vertical-align: middle;
+		}
+		@media (max-width: 767px) {
+			#new-card {
+				margin-left: 0;
+			}
+			#card-type {
+				display: none;
+			}
+		}
+	<?php } ?>
+	.StripeElement--complete {
+		border: 1px solid #0C0 !important;
+	}
+	#payment label {
+		cursor: pointer;
+	}
+	#store-card, #set-default-card {
+		cursor: pointer;
+		margin-top: 12px;
+	}
+	.alert {
+		margin-top: 10px;
+	}
+	.buttons {
+		border: none;
+		margin: 10px 0;
+	}
+	/* mobile styling */
+	@media (max-width: 767px) {
+		#payment {
+			padding: 10px;
+		}
+		.tab-text {
+			display: none;
+		}
+	}
+</style>
+
+<div id="payment-method-tabs">
+	<?php if (!empty($customer_cards)) { ?>
+		<span data-tab="stored-card">
+			<span class="tab-image"><?php echo html_entity_decode($settings['stored_card_image'], ENT_QUOTES, 'UTF-8'); ?></span>
+			<span class="tab-text"><?php echo html_entity_decode($settings['text_use_a_stored_card_' . $language], ENT_QUOTES, 'UTF-8'); ?></span>
+		</span>
+	<?php } ?>
+	<?php if (!empty($settings['new_card_image']) || !empty($settings['text_use_a_new_card_' . $language])) { ?>
+		<span data-tab="new-card">
+			<span class="tab-image"><?php echo html_entity_decode($settings['new_card_image'], ENT_QUOTES, 'UTF-8'); ?></span>
+			<span class="tab-text"><?php echo html_entity_decode($settings['text_use_a_new_card_' . $language], ENT_QUOTES, 'UTF-8'); ?></span>
+		</span>
+	<?php } ?>
+</div>
+
+<form id="payment" class="form-horizontal">
+		
+	<?php if (!empty($customer_cards)) { ?>
+		<div id="stored-card" class="payment-tab">
+			<select id="card-select" class="form-control">
+				<?php foreach ($customer_cards as $customer_card) { ?>
+					<?php if (strpos($customer_card['id'], 'pm_') !== 0) continue; ?>
+					<?php $selected = ($customer_card['id'] == $default_card) ? 'selected="selected"' : ''; ?>
+					<option value="<?php echo $customer_card['id']; ?>" <?php echo $selected; ?>>
+						<?php echo ucwords($customer_card['card']['brand']) . ' ' . html_entity_decode($settings['text_ending_in_' . $language], ENT_QUOTES, 'UTF-8') . ' ' . $customer_card['card']['last4']; ?>
+						(<?php echo str_pad($customer_card['card']['exp_month'], 2, '0', STR_PAD_LEFT) . '/' . substr($customer_card['card']['exp_year'], 2); ?>)
+					</option>
+				<?php } ?>
+			</select>
+			<br>
+			<label><?php echo html_entity_decode($settings['text_set_card_as_default_' . $language], ENT_QUOTES, 'UTF-8'); ?> <input type="checkbox" id="set-default-card" /></label>
+			<br>
+			<div style="margin-top: 10px">
+				<?php echo html_entity_decode($settings['text_delete_this_card_' . $language], ENT_QUOTES, 'UTF-8'); ?> &nbsp;
+				<?php if (version_compare(VERSION, '2.0', '<')) { ?>
+					<a class="button" style="padding: 3px 6px; background: red;" onclick="deleteCard()">&times;</a>
+				<?php } else { ?>
+					<a class="btn btn-danger" style="padding: 3px 6px" onclick="deleteCard()"><i class="fa fa-trash-o"></i></a>
+				<?php } ?>
+			</div>
+		</div>
+	<?php } ?>
+
+	<div id="new-card" class="payment-tab">
+		<?php if ($settings['card_input_format'] == 'combined') { ?>
+			<div id="card-element"></div>
+		<?php } else { ?>
+			<span id="card-number-text"><?php echo html_entity_decode($settings['text_card_number_' . $language], ENT_QUOTES, 'UTF-8'); ?></span> <div id="card-number"></div> <i id="card-type"></i>
+			<br>
+			<span id="card-expiry-text"><?php echo html_entity_decode($settings['text_card_expiry_' . $language], ENT_QUOTES, 'UTF-8'); ?></span> <div id="card-expiry"></div>
+			<br>
+			<span id="card-cvc-text"><?php echo html_entity_decode($settings['text_card_cvc_' . $language], ENT_QUOTES, 'UTF-8'); ?></span> <div id="card-cvc"></div>
+		<?php } ?>
+		<?php if ($logged_in && $settings['allow_stored_cards'] && $settings['send_customer_data'] == 'choice') { ?>					
+			<br>
+			<label><?php echo html_entity_decode($settings['text_store_card_' . $language], ENT_QUOTES, 'UTF-8'); ?> <input type="checkbox" id="store-card" /></label>
+		<?php } ?>
+	</div>
+	
+</form>
+
+<div id="payment-buttons" class="buttons">
+	<div class="right pull-right">
+		<a id="button-confirm" onclick="confirmOrder()" class="<?php echo $settings['button_class']; ?>" style="<?php echo $settings['button_styling']; ?>">
+			<?php echo $settings['button_text_' . $language]; ?>
+		</a>
+	</div>
+</div>
+
+<script>
+	// Utility functions
+	<?php if ($settings['transaction_mode'] == 'live') { ?>
+		if (window.location.protocol != 'https:') {
+			displayError('You are in LIVE mode but are not on a secure (https) connection! Payment info is not secure!');
+		}
+	<?php } ?>
+	
+	<?php if ($error) { ?>
+		displayError('<?php echo $error; ?>');
+	<?php } ?>
+	
+	$(document).ready(function(){
+		$('#payment-method-tabs span').click(function(){
+			var method = $(this).attr('data-tab');
+			
+			$('#payment-method-tabs span').removeClass('active')
+			$(this).addClass('active');
+			
+			$('.payment-tab').hide();
+			$('#' + method).show();
+			document.cookie = 'stripe_payment_type=' + method;
+		});
+		
+		<?php if (!empty($_COOKIE['stripe_payment_type'])) { ?>
+			$('#payment-method-tabs span[data-tab="<?php echo $_COOKIE['stripe_payment_type']; ?>"]').click();
+		<?php } else { ?>
+			$('#payment-method-tabs span:first').click();
+		<?php } ?>
+	});
+	
+	function displayWait(message) {
+		$('#button-confirm').removeAttr('onclick').attr('disabled', 'disabled');
+		$('#card-select').attr('disabled', 'disabled');
+		$('.alert').remove();
+		$('#payment').after('<div class="alert alert-warning" style="display: none"><i class="fa fa-spinner fa-spin"></i> &nbsp; ' + message.trim() + '</div>');
+		$('.alert-warning').fadeIn();
+	}
+	
+	function displayError(message) {
+		// Journal fixes
+		if (typeof triggerLoadingOff == 'function') triggerLoadingOff();
+		$('.journal-loading-overlay').remove();
+		// end
+		$('.alert').remove();
+		$('#button-confirm').attr('onclick', 'confirmOrder()').removeAttr('disabled');
+		$('#card-select').removeAttr('disabled');
+		if (message) {
+			$('#payment').after('<div class="alert alert-danger" style="display: none"><i class="fa fa-exclamation-triangle"></i> &nbsp; ' + message.trim() + '</div>');
+			$('.alert-danger').fadeIn();
+		}
+	}
+	
+	// Set up Stripe Elements
+	var stripe_errors = {
+		<?php foreach ($stripe_errors as $stripe_error) { ?>
+			<?php echo $stripe_error; ?>: '<?php echo str_replace("'", "\'", html_entity_decode($settings['error_' . $stripe_error . '_' . $language], ENT_QUOTES, 'UTF-8')); ?>',
+		<?php } ?>
+	}
+	
+	var stripe;
+	var card;
+	
+	var billingDetails = {
+		name: '<?php echo $order_info['payment_firstname'] . ' ' . $order_info['payment_lastname']; ?>',
+		email: '<?php echo $order_info['email']; ?>',
+		phone: '<?php echo $order_info['telephone']; ?>',
+		<?php if (!empty($order_info['payment_iso_code_2'])) { ?>
+			address: {
+				line1: '<?php echo $order_info['payment_address_1']; ?>',
+				line2: '<?php echo $order_info['payment_address_2']; ?>',
+				city: '<?php echo $order_info['payment_city']; ?>',
+				state: '<?php echo $order_info['payment_zone']; ?>',
+				postal_code: '<?php echo $order_info['payment_postcode']; ?>',
+				country: '<?php echo $order_info['payment_iso_code_2']; ?>'
+			}
+		<?php } ?>
+	};
+	
+	$.getScript('https://js.stripe.com/v3/', function(data) {
+		<?php if (empty($settings['account_id'])) { ?>
+			stripe = Stripe('<?php echo $settings[$settings['transaction_mode'] . '_publishable_key']; ?>');
+		<?php } else { ?>
+			stripe = Stripe('<?php echo $settings[$settings['transaction_mode'] . '_publishable_key']; ?>', {stripeAccount: '<?php echo $settings['account_id']; ?>'});
+		<?php } ?>
+		
+		stripeElements = stripe.elements({locale: '<?php echo substr($language, 0, 2); ?>'});
+		
+		// set up card input styling (full options are available at https://stripe.com/docs/stripe.js#element-options)
+		var styles = {
+			base: {
+				color: '#444',
+				fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+				fontSize: '15px',
+				iconColor: '#66F',
+				'::placeholder': {
+					color: '#CCC',
+				},
+			},
+		};
+		
+		<?php if ($settings['card_input_format'] == 'combined') { ?>
+			
+			card = stripeElements.create('card', {
+				hidePostalCode: true,
+				iconStyle: 'default', // use 'solid' if you are on a dark background
+				style: styles,
+			});
+			card.mount('#card-element');
+			
+		<?php } else { ?>
+			
+			card = stripeElements.create('cardNumber', {style: styles});
+			card.mount('#card-number');
+			card.on('change', function(data) {
+				if (data.brand == 'visa' || data.brand == 'mastercard' || data.brand == 'amex' || data.brand == 'discover' || data.brand == 'jcb') {
+					$('#card-type').attr('class', 'fa fa-cc-' + data.brand);
+				}
+			});
+			
+			cardExpiry = stripeElements.create('cardExpiry', {style: styles});
+			cardExpiry.mount('#card-expiry');
+			
+			cardCvc = stripeElements.create('cardCvc', {style: styles});
+			cardCvc.mount('#card-cvc');
+			
+		<?php } ?>
+	});
+	
+	// Card functions
+	function deleteCard() {
+		if (!confirm('<?php echo strip_tags(html_entity_decode(str_replace(':', '?', $settings['text_delete_this_card_' . $language]), ENT_QUOTES, 'UTF-8')); ?>')) return;
+		$.ajax({
+			type: 'POST',
+			url: 'index.php?route=extension/<?php echo $type; ?>/<?php echo $name; ?>/deleteCard',
+			data: {card_id: $('#stored-card option:selected').val()},
+			beforeSend: function() {
+				displayWait('<?php echo str_replace("'", "\'", html_entity_decode($settings['text_please_wait_' . $language], ENT_QUOTES, 'UTF-8')); ?>');
+			},
+			success: function(error) {
+				console.log(error);
+				if (error.trim()) {
+					displayError(error.trim());
+				} else {
+					$('#stored-card option:selected').remove();
+					displayError('');
+					if (!$('#stored-card option').length) {
+						$('#stored-card').remove();
+						$('span[data-tab="stored-card"]').remove();
+						$('span[data-tab="new-card"]').click();
+					}
+				}
+			},
+			error: function(xhr, status, error) {
+				triggerFatalError(xhr.responseText ? xhr.responseText : error);
+			}
+		});
+	}
+	
+	// Order confirmation functions
+	function confirmOrder() {
+		displayWait('<?php echo str_replace("'", "\'", html_entity_decode($settings['text_validating_payment_info_' . $language], ENT_QUOTES, 'UTF-8')); ?>');
+		
+		paymentType = $('.payment-tab:visible').attr('id');
+		
+		if (paymentType == 'stored-card') {
+			createPaymentIntent($('#card-select').val(), $('#set-default-card').is(':checked'));
+		}
+		
+		if (paymentType == 'new-card') {
+			stripe.createPaymentMethod({
+				type: 'card',
+				card: card,
+				billing_details: billingDetails,
+			}).then(function(result){
+				if (result.error) {
+					displayError(stripe_errors[result.error.code] ? stripe_errors[result.error.code] : result.error.message);
+				} else {
+					createPaymentIntent(result.paymentMethod.id, $('#store-card').is(':checked'));
+				}
+			});
+		}
+	}
+	
+	function createPaymentIntent(paymentMethod, storeCard) {
+		$.ajax({
+			type: 'POST',
+			url: 'index.php?route=extension/<?php echo $type . '/' . $name; ?>/createPaymentIntent',
+			data: {payment_method: paymentMethod, store_card: storeCard},
+			dataType: 'json',
+			beforeSend: function() {
+				displayWait('<?php echo str_replace("'", "\'", html_entity_decode($settings['text_processing_payment_' . $language], ENT_QUOTES, 'UTF-8')); ?>');
+			},
+			success: function(json) {
+				if (json.errorMessage) {
+					displayError(json.errorMessage);
+				} else if (json.status == 'requires_action') {
+					stripe.handleCardAction(json.client_secret).then(function(result){
+						if (result.error) {
+							displayError(result.error.message);
+						} else {
+							finalizePayment(result.paymentIntent.id);
+						}
+					});
+				} else {
+					finalizePayment(json.payment_intent_id);
+				}
+			},
+			error: function(xhr, status, error) {
+				displayError(xhr.responseText ? xhr.responseText : error);
+			}
+		});
+	}
+	
+	function finalizePayment(paymentIntent) {
+		$.ajax({
+			type: 'POST',
+			url: 'index.php?route=extension/<?php echo $type . '/' . $name; ?>/finalizePayment',
+			data: {payment_intent: paymentIntent},
+			beforeSend: function() {
+				displayWait('<?php echo str_replace("'", "\'", html_entity_decode($settings['text_finalizing_order_' . $language], ENT_QUOTES, 'UTF-8')); ?>');
+			},
+			success: function(data) {
+				console.log(data);
+				data = data.trim();
+				if (data.substring(0, 2) == 'pi') {
+					stripe.confirmCardPayment(data).then(function(result){
+						if (result.error) {
+							displayError(result.error.message);
+						} else {
+							completeOrder();
+						}
+					});
+				} else if (data) {
+					displayError(data);
+				} else {
+					completeOrder();
+				}
+			},
+			error: function(xhr, status, error) {
+				displayError(xhr.responseText ? xhr.responseText : error);
+			}
+		});
+	}
+	
+	function completeOrder() {
+		<?php if (empty($settings['advanced_error_handling'])) { ?>
+			location = '<?php echo $checkout_success_url; ?>';
+		<?php } else { ?>
+			$.ajax({
+				cache: false,
+				url: 'index.php?route=extension/<?php echo $type; ?>/<?php echo $name; ?>/completeOrder',
+				success: function(error) {
+					console.log(error);
+					if (error.trim()) {
+						completeWithError(error.trim());
+					} else {
+						location = '<?php echo $checkout_success_url; ?>';
+					}
+				},
+				error: function(xhr, status, error) {
+					completeWithError(xhr.responseText ? xhr.responseText : error);
+				}
+			});
+		<?php } ?>
+	}
+	
+	<?php if (!empty($settings['advanced_error_handling'])) { ?>
+		function completeWithError(errorMessage) {
+			$.ajax({
+				type: 'POST',
+				url: 'index.php?route=extension/<?php echo $type; ?>/<?php echo $name; ?>/completeWithError',
+				data: {error_message: errorMessage},
+				success: function(error) {
+					console.log(error);
+					if (error.trim()) {
+						triggerFatalError(error);
+					} else {
+						location = '<?php echo $checkout_success_url; ?>';
+					}
+				},
+				error: function(xhr, status, error) {
+					triggerFatalError(xhr.responseText ? xhr.responseText : error);
+				}
+			});
+		}
+		
+		function triggerFatalError(errorMessage) {
+			$('.alert').remove();
+			$('#payment').after('<div class="warning alert alert-danger"><i class="fa fa-exclamation-triangle"></i> <strong>Fatal Error:</strong> Your payment was completed successfully, but the system encountered a fatal error when trying to complete your order. Please do not resubmit your order! Instead, please <a target="_blank" href="index.php?route=information/contact">contact the store administrator</a> with your order number (#<?php echo $order_info['order_id']; ?>) and the following error message:<br><br>' + errorMessage.trim() + '</div>');
+		}
+	<?php } ?>
+</script>

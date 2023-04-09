@@ -1,0 +1,69 @@
+{# 
+ $Project: Hidden Products $
+ $Author: karapuz team <support@ka-station.com> $
+ $Version: 1.0.2 $ ($Revision: 17 $) 
+#}
+{{ header }}{{ column_left }} 
+
+<div id="content">
+
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="pull-right">
+        <button type="submit" form="form-input" data-toggle="tooltip" title="{{ t('button_save') }}" class="btn btn-primary"><i class="fa fa-check-circle"></i> {{ t('button_save') }}</button>
+        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ t('button_cancel') }}" class="btn btn-default"><i class="fa fa-reply"></i>  {{ t('button_cancel') }}</a>
+      </div>
+      <h1><i class="fa fa-puzzle-piece"></i> {{ heading_title }}</h1>
+      {{ ka_breadcrumbs }} 
+    </div>
+  </div>
+
+	<div class="container-fluid">
+		{{ ka_top }} 
+
+		<div class="panel panel-default">
+		<div class="panel-body">
+		  
+    <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-input">
+      <input type="hidden" name="mode" value="" id="mode" />
+      
+			<div id="service_line">
+				<table>
+					<tr>
+						<td><b>Full Version</b>: {{ extension_version }}&nbsp;&nbsp;&nbsp;</td>
+						<td><b>Author</b>: karapuz&nbsp;&nbsp;&nbsp;</td>
+						<td><b>Contact Us</b>: <a href="mailto:support@ka-station.com">via email</a>&nbsp;&nbsp;&nbsp;</td>
+						<td><a href="https://www.ka-station.com/index.php?route=information/contact" target="_blank">via secure form at www.ka-station.com</a>&nbsp;&nbsp;&nbsp;</td>
+					</tr>
+				</table>
+				<br />
+			</div>
+      
+      <table class="table table-striped table-bordered table-hover">
+        <thead> 
+          <tr>
+            <td style="width: 360px" class="text-left">Setting</td>
+            <td class="text-left">Value</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="left" width="60%">Version          
+            </td>
+            <td class="left" width="40%">
+              {{ extension_version }} 
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript"><!--
+
+//--></script>
+
+{{ footer }}

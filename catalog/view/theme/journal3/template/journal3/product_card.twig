@@ -1,0 +1,862 @@
+{% set prefix = display == 'grid' ? 'ProductGrid' : 'ProductList' %}
+{% for product in products %}
+  {% set classes = j3.classes({
+    'out-of-stock': product.quantity <= 0,
+    'has-countdown': product.date_end,
+    'has-zero-price': not product.price_value,
+    'has-extra-button': product.extra_buttons,
+  }) %}
+  <div class="product-layout {{ j3.classes(product.classes) }} {{ classes }}">
+    <div class="product-thumb">
+      {% if (j3.settings.getIn(prefix ~ 'NamePosition', _context) == "image") %}
+        <div class="name"><a href="{{ product.href }}">{{ product.name }}</a></div>
+      {% endif %}
+      <div class="image">
+        {% if j3.settings.get('quickviewStatus') %}
+          <div class="quickview-button">
+            <a class="btn btn-quickview" {% if j3.settings.getIn(prefix ~ 'QuickviewDisplay', _context) == 'icon' and j3.settings.getIn(prefix ~ 'QuickviewTooltipStatus', _context) %}data-toggle="tooltip" data-tooltip-class="{{ module_id ? 'module-products-' ~ module_id ~ ' module-products-grid' : 'product-grid' }} quickview-tooltip" data-placement="{{ j3.settings.getIn(prefix ~ 'QuickviewTooltipPosition', _context) }}" title="{{ j3.settings.get('quickviewText') }}"{% endif %} onclick="quickview('{{ product.product_id }}')"><span class="btn-text">{{ j3.settings.get('quickviewText') }}</span></a>
+          </div>
+        {% endif %}
+
+        <a href="{{ product.href }}" class="product-img {% if product.second_thumb %}has-second-image{% endif %}">
+          <div>
+            {% if j3.settings.get('performanceLazyLoadImagesStatus') %}
+              <img src="{{ dummy_image }}" data-src="{{ product.thumb }}" {% if product.thumb2x %}data-srcset="{{ product.thumb }} 1x, {{ product.thumb2x }} 2x" {% endif %} width="{{ image_width }}" height="{{ image_height }}" alt="{{ product.name }}" title="{{ product.name }}" class="img-responsive img-first lazyload"/>
+            {% else %}
+              <img src="{{ product.thumb }}" {% if product.thumb2x %}srcset="{{ product.thumb }} 1x, {{ product.thumb2x }} 2x" {% endif %} width="{{ image_width }}" height="{{ image_height }}" alt="{{ product.name }}" title="{{ product.name }}" class="img-responsive img-first"/>
+            {% endif %}
+
+            {% if product.second_thumb %}
+              {% if j3.settings.get('performanceLazyLoadImagesStatus') %}
+                <img src="{{ dummy_image }}" data-src="{{ product.second_thumb }}" {% if product.second_thumb2x %}data-srcset="{{ product.second_thumb }} 1x, {{ product.second_thumb2x }} 2x" {% endif %} width="{{ image_width }}" height="{{ image_height }}" alt="{{ product.name }}" title="{{ product.name }}" class="img-responsive img-second lazyload"/>
+              {% else %}
+                <img src="{{ product.second_thumb }}" {% if product.second_thumb2x %}srcset="{{ product.second_thumb }} 1x, {{ product.second_thumb2x }} 2x" {% endif %} width="{{ image_width }}" height="{{ image_height }}" alt="{{ product.name }}" title="{{ product.name }}" class="img-responsive img-second"/>
+              {% endif %}
+            {% endif %}
+
+          </div>
+        </a>
+
+        {% if product.labels %}
+          <div class="product-labels">
+            {% for id, label in product.labels %}
+              <span class="product-label product-label-{{ id }} product-label-{{ label.display }}"><b>{{ label.label }}</b></span>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if j3.settings.get('countdownStatus') and product.date_end %}
+          <div class="countdown" data-date="{{ product.date_end }}"></div>
+        {% endif %}
+      </div>
+
+      <div class="caption">
+        {% if product.stat1 or product.stat2 %}
+          <div class="stats">
+            {% if product.stat1 %}
+              <span class="stat-1"><span class="stats-label">{{ product.stat1.label }}:</span> <span>{{ product.stat1.text }}</span></span>
+            {% endif %}
+            {% if product.stat2 %}
+              <span class="stat-2"><span class="stats-label">{{ product.stat2.label }}:</span> <span>{{ product.stat2.text }}</span></span>
+            {% endif %}
+          </div>
+        {% endif %}
+		
+		
+		<div class="category-list-levo">
+			{% if (j3.settings.getIn(prefix ~ 'NamePosition', _context) == "default") %}
+			  <div class="name"><a href="{{ product.href }}">{{ product.name }}</a></div>
+			{% endif %}
+
+			<div class="description">{{ product.description }}</div>
+			
+	      {% if options %}
+          <div class="product-options category-list-options">
+            <h3 class="options-title title">{{ text_option }}</h3>
+            {% for option in options %}
+            {% if option.type == 'select' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }} {% if j3.settings.get(stylePrefix ~ 'OptionsPushSelect') %}push-option{% endif %}">
+              <label class="control-label" for="input-option{{ option.product_option_id }}">{{ option.name }}</label>
+              <select name="option[{{ option.product_option_id }}]" id="input-option{{ option.product_option_id }}" class="form-control">
+                <option value="">{{ text_select }}</option>
+                {% for option_value in option.product_option_value %}
+                <option {% if '(Prodano)' in option_value.name %} disabled="true" {% endif %} value="{{ option_value.product_option_value_id }}">{{ option_value.name }}
+                {% if option_value.price and optionPrice %}
+                ({{ option_value.price_prefix }}{{ option_value.price }})
+                {% endif %} </option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endif %}
+            {% if option.type == 'radio' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }} {% if j3.settings.get(stylePrefix ~ 'OptionsPushRadio') %}push-option{% endif %}">
+              <label class="control-label">{{ option.name }}</label>
+              <div id="input-option{{ option.product_option_id }}"> {% for option_value in option.product_option_value %}
+                <div class="radio">
+                  <label>
+                    <input type="radio" name="option[{{ option.product_option_id }}]" value="{{ option_value.product_option_value_id }}" />
+                    {% if option_value.image %} <img width="{{ j3.settings.get('image_dimensions_options.width') }}" height="{{ j3.settings.get('image_dimensions_options.height') }}" src="{{ option_value.image }}" alt="{{ option_value.name }} {% if option_value.price and optionPrice %} {{ option_value.price_prefix }} {{ option_value.price }} {% endif %}" data-toggle="tooltip" data-tooltip-class="push-tooltip" data-placement="{{ j3.settings.get(stylePrefix ~ 'PushTooltipPosition') }}" title="{{ option_value.name }} {% if option_value.price and optionPrice %} ({{ option_value.price_prefix }}{{ option_value.price }}) {% endif %}"/> {% endif %}
+                    <span class="option-value">
+                      {{ option_value.name }}
+                      {% if option_value.price and optionPrice %}
+                        <span class="option-price">
+                          ({{ option_value.price_prefix }}{{ option_value.price }})
+                        </span>
+                      {% endif %}
+                    </span>
+                  </label>
+                </div>
+                {% endfor %} </div>
+            </div>
+            {% endif %}
+            {% if option.type == 'checkbox' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }} {% if j3.settings.get(stylePrefix ~ 'OptionsPushCheckbox') %}push-option{% endif %}">
+              <label class="control-label">{{ option.name }}</label>
+              <div id="input-option{{ option.product_option_id }}"> {% for option_value in option.product_option_value %}
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="option[{{ option.product_option_id }}][]" value="{{ option_value.product_option_value_id }}" />
+                    {% if option_value.image %} <img width="{{ j3.settings.get('image_dimensions_options.width') }}" height="{{ j3.settings.get('image_dimensions_options.height') }}" src="{{ option_value.image }}" alt="{{ option_value.name }} {% if option_value.price and optionPrice %} {{ option_value.price_prefix }} {{ option_value.price }} {% endif %}" data-toggle="tooltip" data-tooltip-class="push-tooltip" data-placement="{{ j3.settings.get(stylePrefix ~ 'PushTooltipPosition') }}" title="{{ option_value.name }} {% if option_value.price and optionPrice %} ({{ option_value.price_prefix }}{{ option_value.price }}) {% endif %}"/> {% endif %}
+                    <span class="option-value">
+                      {{ option_value.name }}
+                      {% if option_value.price and optionPrice %}
+                        <span class="option-price">({{ option_value.price_prefix }}{{ option_value.price }})</span>
+                      {% endif %}
+                    </span>
+                  </label>
+                </div>
+                {% endfor %} </div>
+            </div>
+            {% endif %}
+            {% if option.type == 'text' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }}">
+              <label class="control-label" for="input-option{{ option.product_option_id }}">{{ option.name }}</label>
+              <input type="text" name="option[{{ option.product_option_id }}]" value="{{ option.value }}" placeholder="{{ option.name }}" id="input-option{{ option.product_option_id }}" class="form-control" />
+            </div>
+            {% endif %}
+            {% if option.type == 'textarea' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }}">
+              <label class="control-label" for="input-option{{ option.product_option_id }}">{{ option.name }}</label>
+              <textarea name="option[{{ option.product_option_id }}]" rows="5" placeholder="{{ option.name }}" id="input-option{{ option.product_option_id }}" class="form-control">{{ option.value }}</textarea>
+            </div>
+            {% endif %}
+            {% if option.type == 'file' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }}">
+              <label class="control-label">{{ option.name }}</label>
+              <button type="button" id="button-upload{{ option.product_option_id }}" data-loading-text="{{ text_loading }}" class="btn btn-default btn-block"><i class="fa fa-upload"></i> {{ button_upload }}</button>
+              <input type="hidden" name="option[{{ option.product_option_id }}]" value="" id="input-option{{ option.product_option_id }}" />
+            </div>
+            {% endif %}
+            {% if option.type == 'date' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }}">
+              <label class="control-label" for="input-option{{ option.product_option_id }}">{{ option.name }}</label>
+              <div class="input-group date" data-picker-class="product-options pp-date-time-picker">
+                <input type="text" name="option[{{ option.product_option_id }}]" value="{{ option.value }}" data-date-format="YYYY-MM-DD" id="input-option{{ option.product_option_id }}" class="form-control" />
+                <span class="input-group-btn">
+                <button class="btn btn-default" type="button"><i class="fa fa-calendar"></i></button>
+                </span></div>
+            </div>
+            {% endif %}
+            {% if option.type == 'datetime' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }}">
+              <label class="control-label" for="input-option{{ option.product_option_id }}">{{ option.name }}</label>
+              <div class="input-group datetime" data-picker-class="product-options pp-date-time-picker">
+                <input type="text" name="option[{{ option.product_option_id }}]" value="{{ option.value }}" data-date-format="YYYY-MM-DD HH:mm" id="input-option{{ option.product_option_id }}" class="form-control" />
+                <span class="input-group-btn">
+                <button type="button" class="btn btn-default"><i class="fa fa-calendar"></i></button>
+                </span></div>
+            </div>
+            {% endif %}
+            {% if option.type == 'time' %}
+            <div class="form-group{% if option.required %} required {% endif %} product-option-{{ option.type }}">
+              <label class="control-label" for="input-option{{ option.product_option_id }}">{{ option.name }}</label>
+              <div class="input-group time" data-picker-class="product-options pp-date-time-picker">
+                <input type="text" name="option[{{ option.product_option_id }}]" value="{{ option.value }}" data-date-format="HH:mm" id="input-option{{ option.product_option_id }}" class="form-control" />
+                <span class="input-group-btn">
+                <button type="button" class="btn btn-default"><i class="fa fa-calendar"></i></button>
+                </span></div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+			
+		</div>
+		
+		
+	
+		
+		
+		
+		
+		
+		
+		<div class="category-list-desno">
+        
+             <!-- CATOPTIONS -->
+            {% if options_to_list_status is defined %}
+            {% if options_to_list_status %}
+
+   
+
+            {% set ifoptions_check = false %}
+            {% set counter = 0 %}
+
+              {% if extra_counter is not defined %}
+              {% set extra_counter = "" %}
+              {% endif %}
+
+              {% if product.options %}
+                <form class="qtypopup" action="{{ action }};" method="post" enctype="multipart/form-data" id="product_{{ product['product_id'] ~ extra_counter }}">
+               
+                {% for option in product.options %}
+
+                  {% if options_to_list_select %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'select' %}
+
+                    {% set counter = counter + 1 %}
+                    {% if counter == 2 %}
+                      {% set additionalclass = "count-" ~ counter %}{% else %}{% set additionalclass = "" %}
+                    {% endif %}
+
+
+                        <div class="form-group catselect {{ additionalclass }}">
+                          {% if options_to_list_select_label %}
+                          <label class="control-label">{{ option['name'] }}</label>
+                          {% endif %}
+                          <div id="input-option{{ option['product_option_id'] }}">
+                            
+                            <select name="option[{{ option['product_option_id'] }}]" class="form-control" id="input-option[{{ option['product_option_id'] }}]" >
+                                <option value="">{{ text_select }}</option>
+                                {% for option_value in option['product_option_value'] %}
+                                  {% if not option_value['subtract'] or (option_value['quantity'] > 0) %}
+                                  <option {% if option_value['c_default'] %}selected{% endif %} value="{{ option_value['product_option_value_id'] }}">{{ option_value['name'] }}  {% if option_value['price'] != "0" %}
+                                      ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                                    {% endif %}
+                                  </option>
+                                  {% endif %}
+                                {% endfor %}
+                            </select>
+
+                          </div>
+                        </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %}
+
+
+                {% if category_list_qty %}
+                {% if options_to_list_select_qty %}
+                {% if option['catlist'] %}
+                {% set ifoptions_check = true %}
+                  {% if option['type'] == 'select_qty' %}
+                    <div class="form-group{% if option.required %} required {% endif %} clear_both">
+                     {% if options_to_list_select_label_qty %}
+                      <label class="control-label" for="input-option{{ option['product_option_id'] }}">{{ option['name'] }}</label><label class="qty_entry">{{ entry_qty }}</label>{% endif %}
+                      <div id="input-option{{ option['product_option_id'] }}">
+                      <select name="option[{{ option['product_option_id'] }}]" id="input-option[{{ option['product_option_id'] }}]" class="form-control qty main">           
+                        <option value="">{{ text_select }}</option>
+                        {% for option_value in option['product_option_value'] %}
+                        <option data-prefix="{{ option_value['price_prefix'] }}" data-price="{{ option_value['price'] }}" {% if option_value['c_default'] %}selected{% endif %} value="{{ option_value['product_option_value_id'] }}">{{ option_value['name'] }}
+                        {% if option_value['price'] %}
+                        ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                        {% endif %}
+                        </option>
+                        {% endfor %}
+                      </select>
+                     <input data-toggle="tooltip" data-placement="top" title="{{ entry_quantity }}" data-prefix="{{ option_value['price_prefix'] }}" type="text" oninput="countQty(this)" data-option="input-option[{{ option['product_option_id'] }}]" data-type="{{ option['type'] }}" value="{{ option['value'] }}" placeholder="1" class="form-control qty quantity" />
+                    </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+                {% endif %}
+                {% endif %}  
+
+                  {% if options_to_list_radio and not options_to_list_image %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'radio' %}
+                          <div class="form-group catradio">
+                            {% if options_to_list_radio_label %}
+                            <label class="control-label">{{ option['name'] }}</label>
+                            {% endif %}
+                            <div id="input-option{{ option['product_option_id'] }}">
+                              {% for option_value in option['product_option_value'] %}
+                                {% if not option_value['subtract'] or (option_value['quantity'] > 0) %}
+                                  <div class="radio">
+                                    <label>
+                                      <input type="radio" 
+                                        {% if option_value['c_default'] %} checked {% endif %}
+                                        price="{% if option_value['price'] is defined %}
+                                            {% if option_value['price'] %}{{ option_value['price'] }}{% else %}0{% endif %}
+                                        {% endif %}"
+                                        data-prefix="{{ option_value['price_prefix'] }}"
+                                        data-price="{{ option_value['price'] }}"
+
+                                        name="option[{{ option['product_option_id'] }}]" value="{{ option_value['product_option_value_id'] }}" />
+                                      {{ option_value['name'] }}
+                                      {% if option_value['price'] != "0" %}
+                                      ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                                      {% endif %}
+                                    </label>
+                                  </div>
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %} 
+
+
+                  {% if category_list_qty %}
+                  {% if options_to_list_radio_qty %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'radio_qty' %}
+                    <div class="form-group{% if option.required %} required {% endif %} clear_both">
+                    {% if options_to_list_radio_label_qty %}
+                      <label class="control-label">{{ option['name'] }}</label><label class="qty_entry">{{ entry_qty }}</label>{% endif %}
+                      <div id="input-option{{ option['product_option_id'] }}">
+                        {% for option_value in option['product_option_value'] %}
+                        <div class="radio">
+                          <label>              
+                            <input type="radio" 
+                                        {% if option_value['c_default'] %} checked {% endif %}
+                                        price="{% if option_value['price'] is defined %}
+                                            {% if option_value['price'] %}{{ option_value['price'] }}{% else %}0{% endif %}
+                                        {% endif %}"
+                                        data-prefix="{{ option_value['price_prefix'] }}"
+                                        data-price="{{ option_value['price'] }}"
+
+                            name="option[{{ option['product_option_id'] }}]" value="{{ option_value['product_option_value_id'] }}" />
+                           <span> {{ option_value['name'] }}
+                            {% if option_value['price'] %}
+                            ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                            {% endif %} </span>
+                          </label>
+                           <input data-toggle="tooltip" data-placement="top" title="{{ entry_quantity }}" type="text" oninput="countQty(this)" data-option="input-option{{ option['product_option_id'] }}" data-type="{{ option['type'] }}" data-type="{{ option['type'] }}" data-prefix="{{ option_value['price_prefix'] }}" data-value="{{ option_value['product_option_value_id'] }}" value="{{ option['value'] }}" placeholder="1" class="form-control qty quantity" />
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %}
+                  {% endif %}
+
+                  {% if options_to_list_checkbox %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'checkbox' %}
+                          <div class="form-group catcheckbox">
+                            {% if options_to_list_checkbox_label %}
+                            <label class="control-label">{{ option['name'] }}</label>
+                            {% endif %}
+                            <div id="input-option{{ option['product_option_id'] }}">
+                              {% for option_value in option['product_option_value'] %}
+                                {% if not option_value['subtract'] or (option_value['quantity'] > 0) %}
+                                    <div class="checkbox">
+                                      <label>
+                                        <input type="checkbox" 
+                                        {% if option_value['c_default'] %} checked {% endif %}
+                                        price="{% if option_value['price'] is defined %}
+                                            {% if option_value['price'] %}{{ option_value['price'] }}{% else %}0{% endif %}
+                                        {% endif %}"
+                                        data-prefix="{{ option_value['price_prefix'] }}"
+                                        data-price="{{ option_value['price'] }}"
+
+                                        name="option[{{ option['product_option_id'] }}][]" value="{{ option_value['product_option_value_id'] }}" />
+                                        {{ option_value['name'] }}
+                                        {% if option_value['price'] != "0" %}
+                                        ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                                        {% endif %}
+                                      </label>
+                                    </div>
+                                {% endif %}  
+                              {% endfor %}
+                            </div>
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %} 
+
+              {% if category_list_qty %}
+                {% if options_to_list_checkbox_qty %}
+                {% if option['catlist'] %}
+                {% set ifoptions_check = true %}
+                  {% if option['type'] == 'checkbox_qty' %}
+                  <div class="form-group{% if option.required %} required {% endif %} clear_both">
+                    {% if options_to_list_checkbox_label_qty %}
+                    <label class="control-label">{{ option['name'] }}</label><label class="qty_entry">{{ entry_qty }}</label> 
+                    {% endif %}
+                    <div id="input-option{{ option['product_option_id'] }}">
+                      {% for option_value in option['product_option_value'] %}
+                      <div class="checkbox">
+                        <label>                 
+                          <input 
+                          type="checkbox" 
+                                        {% if option_value['c_default'] %} checked {% endif %}
+                                        price="{% if option_value['price'] is defined %}
+                                            {% if option_value['price'] %}{{ option_value['price'] }}{% else %}0{% endif %}
+                                        {% endif %}"
+                                        data-prefix="{{ option_value['price_prefix'] }}"
+                                        data-price="{{ option_value['price'] }}"
+
+                          name="option[{{ option['product_option_id'] }}][]" value="{{ option_value['product_option_value_id'] }}" />
+                        <span>  {{ option_value['name'] }}
+                          {% if option_value['price'] %}
+                          ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                          {% endif %} </span>
+                        </label>
+                        <input data-toggle="tooltip" data-placement="top" title="{{ entry_quantity }}" type="text" oninput="countQty(this)" data-option="input-option{{ option['product_option_id'] }}" data-type="{{ option['type'] }}" data-type="{{ option['type'] }}" data-prefix="{{ option_value['price_prefix'] }}" data-value="{{ option_value['product_option_value_id'] }}" value="{{ option['value'] }}" placeholder="1" class="form-control qty quantity" />
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                {% endif %}
+                {% endif %} 
+
+
+
+                {% if options_to_list_checkboximg_qty %}
+                {% if option['catlist'] %}
+                {% set ifoptions_check = true %}
+                  {% if option['type'] == 'checkimg_qty' %}
+                  <div class="form-group{% if option.required %} required {% endif %} clear_both image_qty">
+                    {% if options_to_list_checkbox_label_qty %}
+                    <label class="control-label">{{ option['name'] }}</label><label class="qty_entry">{{ entry_qty }}</label> 
+                    {% endif %}
+                    <div id="input-option{{ option['product_option_id'] }}">
+                      {% for option_value in option['product_option_value'] %}
+                      <div class="checkbox radio">
+                        <label>                 
+                          <input {% if option_value['c_default'] %} checked {% endif %}
+                          type="checkbox" price="{% if option_value['price'] is defined %}
+                                            {% if option_value['price'] %}{{ option_value['price'] }}{% else %}0{% endif %}
+                                        {% endif %}"
+                                        data-prefix="{{ option_value['price_prefix'] }}"
+                                        data-price="{{ option_value['price'] }}"
+
+
+                          name="option[{{ option['product_option_id'] }}][]" value="{{ option_value['product_option_value_id'] }}" />
+
+                          {% if qty_popup_images %}  
+                          <a href="{{ option_value['popup'] }}" title="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}">
+                          <img class="img-thumbnail" src="{{ option_value['image'] }}" title="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}" alt="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}" />
+                          </a>
+                          {% else %}
+                          <img src="{{ option_value['image'] }}" alt="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}" class="img-thumbnail" />
+                          {% endif %}
+                          
+                        <span>  {{ option_value['name'] }}
+                          {% if option_value['price'] %}
+                          ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                          {% endif %} </span>
+                        </label>
+                        <input data-toggle="tooltip" data-placement="top" title="{{ entry_quantity }}" type="text" oninput="countQty(this)" data-option="input-option{{ option['product_option_id'] }}" data-type="{{ option['type'] }}" data-type="{{ option['type'] }}" data-prefix="{{ option_value['price_prefix'] }}" data-value="{{ option_value['product_option_value_id'] }}" value="{{ option['value'] }}" placeholder="1" class="form-control qty quantity" />
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                {% endif %}
+                {% endif %} 
+
+
+              {% endif %}
+
+                  {% if options_to_list_image %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'radio' %}
+                          <div class="form-group image catimage">
+                          {% if options_to_list_image_label %}
+                            <label class="control-label">{{ option['name'] }}</label>
+                          {% endif %}
+                            <div id="input-option{{ option['product_option_id'] }}">
+                              {% for option_value in option['product_option_value'] %}
+                                {% if not option_value['subtract'] or (option_value['quantity'] > 0) %}
+                                  <div class="radio">
+                                    <label>
+                                      <input type="radio" 
+                                        {% if option_value['c_default'] %} checked {% endif %}
+                                        price="{% if option_value['price'] is defined %}
+                                            {% if option_value['price'] %}{{ option_value['price'] }}{% else %}0{% endif %}
+                                        {% endif %}"
+                                        data-prefix="{{ option_value['price_prefix'] }}"
+                                        data-price="{{ option_value['price'] }}"
+
+                                      name="option[{{ option['product_option_id'] }}]" value="{{ option_value['product_option_value_id'] }}"
+                                        {% if not option_value['price'] %}
+                                          checked="checked"
+                                        {% endif %}/>
+
+                                      <img data-toggle="tooltip" data-placement="top" 
+                                      title="{% if option_value['price'] != "0" %}{% set price_placeholder = (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') %}{% else %}{% set price_placeholder = "" %}{% endif %}{{ option_value['name'] ~ price_placeholder }}"
+                                      src="{{ option_value['image'] }}" alt="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}" class="img-thumbnail" /> 
+
+                                    </label>
+                                  </div>
+                                 {% endif %}
+                              {% endfor %}
+                            </div>
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %}
+
+                {% if category_list_qty %}
+                {% if options_to_list_image_qty %}
+                {% if option['catlist'] %}
+                {% set ifoptions_check = true %}
+                  {% if option['type'] == 'image_qty' %}
+                  <div class="form-group{% if option.required %} required {% endif %} clear_both image_qty">
+                    {% if options_to_list_image_label_qty %}
+                    <label class="control-label">{{ option['name'] }}</label><label class="qty_entry">{{ entry_qty }}</label>{% endif %}
+                    <div id="input-option{{ option['product_option_id'] }}">
+                      {% for option_value in option['product_option_value'] %}
+                      <div class="radio">
+                        <label>
+                          <input type="radio" 
+                                        {% if option_value['c_default'] %} checked {% endif %}
+                                        price="{% if option_value['price'] is defined %}
+                                            {% if option_value['price'] %}{{ option_value['price'] }}{% else %}0{% endif %}
+                                        {% endif %}"
+                                        data-prefix="{{ option_value['price_prefix'] }}"
+                                        data-price="{{ option_value['price'] }}"
+
+                            name="option[{{ option['product_option_id'] }}]" value="{{ option_value['product_option_value_id'] }}" />
+                          
+                          {% if qty_popup_images %}  
+                          <a href="{{ option_value['popup'] }}" title="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}">
+                          <img class="img-thumbnail" src="{{ option_value['image'] }}" title="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}" alt="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}" />
+                          </a>
+                          {% else %} 
+                          <img src="{{ option_value['image'] }}" alt="{{ option_value['name'] ~ (option_value['price'] ? ' ' ~ option_value['price_prefix'] ~ option_value['price'] : '') }}" class="img-thumbnail" />
+                          {% endif %}
+
+
+                          <span>{{ option_value['name'] }}
+                          {% if option_value['price'] %}
+                          ({{ option_value['price_prefix'] }}{{ option_value['price'] }})
+                          {% endif %}</span>
+                        </label>
+                          <input data-toggle="tooltip" data-placement="top" title="{{ entry_quantity }}" type="text" oninput="countQty(this)" data-option="input-option{{ option['product_option_id'] }}" data-type="{{ option['type'] }}" data-type="{{ option['type'] }}" data-prefix="{{ option_value['price_prefix'] }}" data-value="{{ option_value['product_option_value_id'] }}" value="{{ option['value'] }}" placeholder="1" class="form-control qty quantity" />
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endif %}
+              {% endif %}
+              {% endif %}
+              {% endif %} 
+
+                  {% if options_to_list_text %} 
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %} 
+                    {% if option['type'] == 'text' %}
+                          <div class="form-group cattext">
+                          {% if options_to_list_text_label %}
+                            <label class="control-label" for="input-option{{ option['product_option_id'] }}">{{ option['name'] }}</label>
+                          {% endif %}
+                            <input type="text" name="option[{{ option['product_option_id'] }}]" value="{{ option['value'] }}" placeholder="{{ option['name'] }}" id="input-option{{ option['product_option_id'] }}" class="form-control" />
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %}
+
+                  {% if options_to_list_textarea %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'textarea' %}
+                          <div class="form-group cattextarea">
+                          {% if options_to_list_textarea_label %}
+                            <label class="control-label" for="input-option{{ option['product_option_id'] }}">{{ option['name'] }}</label>
+                          {% endif %} 
+                            <textarea name="option[{{ option['product_option_id'] }}]" rows="5" placeholder="{{ option['name'] }}" id="input-option{{ option['product_option_id'] }}" class="form-control">{{ option['value'] }}</textarea>
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %} 
+
+                  {% if options_to_list_file %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}  
+                    {% if option['type'] == 'file' %}
+                          <div class="form-group catfile">
+                          {% if options_to_list_file_label %} 
+                            <label class="control-label">{{ option['name'] }}</label>
+                          {% endif %}
+                            <button type="button" id="button-upload{{ option['product_option_id'] }}" data-loading-text="{{ text_loading }}" class="btn btn-default btn-block"><i class="fa fa-upload"></i> {{ button_upload }}</button>
+                            <input type="hidden" name="option[{{ option['product_option_id'] }}]" value="" id="input-option{{ option['product_option_id'] }}" />
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %} 
+
+                  {% if options_to_list_date %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'date' %}
+                          <div class="form-group catdate">
+                            {% if options_to_list_date_label %}
+                            <label class="control-label" for="input-option{{ option['product_option_id'] }}">{{ option['name'] }}</label>
+                            {% endif %}
+                            <div class="input-group datetoinsert date_{{ product['product_id'] }}" rel="{{ product['product_id'] }}">
+                              <input type="text" name="option[{{ option['product_option_id'] }}]" value="{{ option['value'] }}" data-date-format="YYYY-MM-DD" id="input-option{{ option['product_option_id'] }}" class="form-control" />
+                              <span class="input-group-btn">
+                              <button class="btn btn-default" type="button"><i class="fa fa-calendar"></i></button>
+                              </span></div>
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %} 
+
+                  {% if options_to_list_datetime %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'datetime' %}
+                          <div class="form-group catdatetime">
+                          {% if options_to_list_datetime_label %} 
+                            <label class="control-label" for="input-option{{ option['product_option_id'] }}">{{ option['name'] }}</label>
+                          {% endif %}
+                            <div class="input-group datetoinsert datetime_{{ product['product_id'] }}" rel="{{ product['product_id'] }}">
+                              <input type="text" name="option[{{ option['product_option_id'] }}]" value="{{ option['value'] }}" data-date-format="YYYY-MM-DD HH:mm" id="input-option{{ option['product_option_id'] }}" class="form-control" />
+                              <span class="input-group-btn">
+                              <button type="button" class="btn btn-default"><i class="fa fa-calendar"></i></button>
+                              </span></div>
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                  {% endif %} 
+
+                  {% if options_to_list_time %}
+                  {% if option['catlist'] %}
+                  {% set ifoptions_check = true %}
+                    {% if option['type'] == 'time' %}
+                          <div class="form-group cattime">
+                            {% if options_to_list_time_label %}
+                            <label class="control-label" for="input-option{{ option['product_option_id'] }}">{{ option['name'] }}</label>
+                            {% endif %} 
+                            <div class="input-group datetoinsert time_{{ product['product_id'] }}" rel="{{ product['product_id'] }}">
+                              <input type="text" name="option[{{ option['product_option_id'] }}]" value="{{ option['value'] }}" data-date-format="HH:mm" id="input-option{{ option['product_option_id'] }}" class="form-control" />
+                              <span class="input-group-btn">
+                              <button type="button" class="btn btn-default"><i class="fa fa-calendar"></i></button>
+                              </span></div>
+                          </div>
+                    {% endif %}
+                  {% endif %}
+                {% endif %}  
+
+            {% endfor %}  
+
+                {% if options_to_list_quantity %}
+                      <div class="form-group catquantity">
+                        {% if options_to_list_quantity_label %}
+                            <label class="control-label" for="input-quantity">{{ text_qty }}</label>
+                        {% endif %}     
+                            <input type="text" class="form-control" name="quantity" size="3" value="1" /> 
+                      </div>   
+                {% else %}
+                    <div>
+                      <input type="hidden" name="quantity" size="3" value="1" />
+                    </div>
+                {% endif %}
+                <input type="hidden" name="product_id" value="{{ product['product_id'] }}" />
+                </form>
+              {% endif %} 
+            {% endif %}
+            {% endif %} 
+            <!-- CATOPTIONS -->
+          
+        {% if product.price %}
+          <div class="price">
+            <div>
+              {% if product.special %}
+                <span class="price-new">{{ product.special }}</span> <span class="price-old">{{ product.price }}</span>
+              {% else %}
+                <span class="price-normal">{{ product.price }}</span>
+              {% endif %}
+            </div>
+            {% if product.tax %}
+              <span class="actinia-price-tax">{{ product.tax }} <span class="actinia-bruto-category">{{ text_tax_category }}</span></span>
+            {% endif %}
+          </div>
+        {% endif %}
+
+		{% if product.extra_buttons %}
+          <div class="extra-group">
+		    <div>
+            {% for id, extra_button in product.extra_buttons %}
+              <a class="btn btn-extra btn-extra-{{ id }}"
+                  {% if (j3.settings.getIn(prefix ~ 'ExtraButtonDisplay' ~ loop.index, _context) == "icon") and (j3.settings.getIn(prefix ~ 'ExtraButtonTooltipStatus', _context)) %} data-toggle="tooltip" data-tooltip-class="{{ module_id ? 'module-products-' ~ module_id ~ ' module-products-grid' : 'product-grid' }} extra-tooltip" data-placement="{{ j3.settings.getIn(prefix ~ 'ExtraButtonTooltipPosition', _context) }}" title="{{ extra_button.label }}" {% endif %}
+                  {% if extra_button.action == 'quickbuy' %}data-quick-buy{% endif %}
+                  {% if extra_button.action == 'link' and extra_button.link.href %}href="{{ extra_button.link.href }}" {{ j3.linkAttrs(extra_button.link) }} data-product_id="{{ product.product_id }}" data-product_url="{{ product.href }}"{% endif %}
+                    data-loading-text="<span class='btn-text'>{{ extra_button.label }}</span>">
+                  <span class="btn-text">{{ extra_button.label }}</span>
+                </a>
+            {% endfor %}
+            </div>
+          </div>
+        {% endif %}			
+		</div>
+		
+		
+		
+		
+		
+		
+        {% if product.rating %}
+          <div class="rating {% if (j3.settings.getIn(prefix ~ 'RatingPosition', _context) == "hover") %}rating-hover{% endif %}">
+            <div class="rating-stars">
+              {% for i in 1..5 %}
+                {% if product.rating < i %}
+                  <span class="fa fa-stack"><i class="fa fa-star-o fa-stack-2x"></i></span>
+                {% else %}
+                  <span class="fa fa-stack"><i class="fa fa-star fa-stack-2x"></i><i class="fa fa-star-o fa-stack-2x"></i></span>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          <div class="rating no-rating {% if (j3.settings.getIn(prefix ~ 'RatingPosition', _context) == "hover") %}rating-hover{% endif %}">
+            <div class="rating-stars">
+              {% for i in 1..5 %}
+                {% if product.rating < i %}
+                  <span class="fa fa-stack"><i class="fa fa-star-o fa-stack-2x"></i></span>
+                {% else %}
+                  <span class="fa fa-stack"><i class="fa fa-star fa-stack-2x"></i><i class="fa fa-star-o fa-stack-2x"></i></span>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if j3.settings.get('catalogCartStatus') or j3.settings.get('catalogWishlistStatus') or j3.settings.get('catalogCompareStatus') %}
+        <div class="buttons-wrapper">
+          <div class="button-group">
+            {% if j3.settings.get('catalogCartStatus') %}
+            <div class="cart-group">
+              <div class="stepper">
+                <input type="text" id="prodqt_{{ product.product_id }}" name="quantity" value="{{ product.minimum }}" data-minimum="{{ product.minimum }}" class="form-control"/>
+                <input type="hidden" name="product_id" value="{{ product.product_id }}"/>
+                <span>
+                <i class="fa fa-angle-up"></i>
+                <i class="fa fa-angle-down"></i>
+              </span>
+              </div>
+              <a class="btn btn-cart" {% if (j3.settings.getIn(prefix ~ 'CartDisplay', _context) == "icon") and (j3.settings.getIn(prefix ~ 'CartTooltipStatus', _context)) %} data-toggle="tooltip" data-tooltip-class="{{ module_id ? 'module-products-' ~ module_id ~ ' module-products-grid' : 'product-grid' }} cart-tooltip" data-placement="{{ j3.settings.getIn(prefix ~ 'CartTooltipPosition', _context) }}" title="{{ button_cart }}" {% endif %} onclick="cart.add('{{ product.product_id }}', $(this).closest('.product-thumb').find('.button-group input[name=\'quantity\']').val());" data-loading-text="<span class='btn-text'>{{ button_cart }}</span>"><span class="btn-text">{{ button_cart }}</span></a>
+            </div>
+            {% endif %}
+
+            {% if j3.settings.get('catalogWishlistStatus') or j3.settings.get('catalogCompareStatus') %}
+            <div class="wish-group">
+              {% if j3.settings.get('catalogWishlistStatus') %}
+              <a class="btn btn-wishlist" {% if (j3.settings.getIn(prefix ~ 'WishlistDisplay', _context) == "icon") and (j3.settings.getIn(prefix ~ 'WishlistTooltipStatus', _context)) %} data-toggle="tooltip" data-tooltip-class="{{ module_id ? 'module-products-' ~ module_id ~ ' module-products-grid' : 'product-grid' }} wishlist-tooltip" data-placement="{{ j3.settings.getIn(prefix ~ 'WishlistTooltipPosition', _context) }}" title="{{ button_wishlist }}" {% endif %} onclick="wishlist.add('{{ product.product_id }}')"><span class="btn-text">{{ button_wishlist }}</span></a>
+              {% endif %}
+
+              {% if j3.settings.get('catalogCompareStatus') %}
+              <a class="btn btn-compare" {% if (j3.settings.getIn(prefix ~ 'CompareDisplay', _context) == "icon") and (j3.settings.getIn(prefix ~ 'CompareTooltipStatus', _context)) %} data-toggle="tooltip" data-tooltip-class="{{ module_id ? 'module-products-' ~ module_id ~ ' module-products-grid' : 'product-grid' }} compare-tooltip" data-placement="{{ j3.settings.getIn(prefix ~ 'CompareTooltipPosition', _context) }}" title="{{ button_compare }}" {% endif %} onclick="compare.add('{{ product.product_id }}')"><span class="btn-text">{{ button_compare }}</span></a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+<script type="text/javascript"><!--
+$('#button-cart, [data-quick-buy]').on('click', function () {
+  var $btn = $(this);
+  $.ajax({
+    url: 'index.php?route=checkout/cart/add',
+    type: 'post',
+    data: $(this).closest('.product-thumb').find(
+      '.button-group input[type=\'text\'], .button-group input[type=\'hidden\'], .button-group input[type=\'radio\']:checked, .button-group input[type=\'checkbox\']:checked, .button-group select, .button-group textarea, ' +
+      '.product-options input[type=\'text\'],.product-options input[type=\'hidden\'], .product-options input[type=\'radio\']:checked,  .product-options input[type=\'checkbox\']:checked, .product-options select, .product-options textarea, ' +
+      '.select[name="recurring_id"]'
+    ),
+    dataType: 'json',
+    beforeSend: function () {
+      $('#button-cart').button('loading');
+    },
+    complete: function () {
+      $('#button-cart').button('reset');
+    },
+    success: function (json) {
+      $('.alert-dismissible, .text-danger').remove();
+      $('.form-group').removeClass('has-error');
+
+      if (json['error']) {
+        if (json['error']['option']) {
+          for (i in json['error']['option']) {
+            var element = $('#input-option' + i.replace('_', '-'));
+
+            if (element.parent().hasClass('input-group')) {
+              element.parent().after('<div class="text-danger">' + json['error']['option'][i] + '</div>');
+            } else {
+              element.after('<div class="text-danger">' + json['error']['option'][i] + '</div>');
+            }
+          }
+        }
+
+        if (json['error']['recurring']) {
+          $('select[name=\'recurring_id\']').after('<div class="text-danger">' + json['error']['recurring'] + '</div>');
+        }
+
+        // Highlight any found errors
+        $('.text-danger').parent().addClass('has-error');
+      }
+
+      if (json['success']) {
+        if ($('html').hasClass('popup-options')) {
+          parent.$(".popup-options .popup-close").trigger('click');
+        }
+
+        if (json['notification']) {
+          parent.show_notification(json['notification']);
+        } else {
+          parent.$('#content').parent().before('<div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> ' + json['success'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+        }
+
+        parent.$('#cart-total').html(json['total']);
+        parent.$('#cart-items,.cart-badge').html(json['items_count']);
+
+        if (json['items_count']) {
+          parent.$('#cart-items,.cart-badge').removeClass('count-zero');
+        } else {
+          parent.$('#cart-items,.cart-badge').addClass('count-zero');
+        }
+
+        parent.$('.cart-content ul').load('index.php?route=common/cart/info ul li');
+
+        if (window.location.href.indexOf('quick_buy=true') !== -1) {
+          parent.location.href = Journal['checkoutUrl'];
+        }
+
+        if ($btn.data('quick-buy') !== undefined) {
+          location = Journal['checkoutUrl'];
+        }
+
+        if (parent.window['_QuickCheckout']) {
+          parent.window['_QuickCheckout'].save();
+        }
+
+        if (json['redirect']) {
+          parent.location.href = json['redirect'];
+        }
+      }
+    },
+    error: function (xhr, ajaxOptions, thrownError) {
+      alert(thrownError + '\r\n' + xhr.statusText + '\r\n' + xhr.responseText);
+    }
+  });
+});
+//--></script>

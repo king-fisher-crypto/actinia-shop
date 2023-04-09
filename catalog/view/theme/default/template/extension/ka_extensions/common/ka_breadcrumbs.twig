@@ -1,0 +1,18 @@
+{# 
+ Project: Ka Extensions
+ Author : karapuz <support@ka-station.com>
+
+ Version: 4 ($Revision: 245 $) 
+#}
+
+{% if (breadcrumbs is not empty) %} 
+<ul class="breadcrumb">
+	{% for breadcrumb in breadcrumbs %} 
+		{% if (breadcrumb['href'] is not empty) %} 
+			<li><a href="{{ breadcrumb['href'] }}">{{ breadcrumb['text'] }}</a></li>
+		{% else %} 
+			<li>{{ breadcrumb['text'] }}</li>
+		{% endif %} 
+	{% endfor %} 
+</ul>
+{% endif %}

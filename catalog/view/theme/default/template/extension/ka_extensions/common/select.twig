@@ -1,0 +1,38 @@
+{#
+  Project: Ka Extensions
+  Author : karapuz <support@ka-station.com>
+
+  Version: 4 ($Revision: 245 $)
+
+PARAMETERS:
+  $name       - name of the select element;
+  $options    - array of key-value pairs like this one:
+								$options = arrray(
+									'<key>' => '<value>'
+								)
+  $value      - selected option
+  $first_line - insert y/n the first empty line to the select
+
+EXAMPLE:
+	{% include 'extension/ka_extensions/common/select.twig' with {'options': statuses, 'value': product_warranty['status'] } %}    
+	
+#}
+
+{% if (name is not empty) %} 
+	<select name="{{ name }}" {% if (extra is not empty) %} {{ extra }} {% endif %} class="form-control">
+		{% if (first_line is not empty) %} 
+		  <option value="">{{ first_line }}</option>
+		{% endif %} 
+		{% for k,v in options %} 
+		  <option value="{{ k }}" {% if (value == k) %} selected="selected" {% endif %}>{{ v }}</option>
+		{% endfor %}
+	</select>
+
+{% else %} 
+
+ {% if (value is defined and options[value] is defined) %}
+ 	{{ options[value] }}
+ {% else %} 
+ 	{{ "Undefined" }}
+ {% endif %}
+{% endif %}
